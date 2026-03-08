@@ -24,22 +24,42 @@ const db = admin.firestore();
 const app = express();
 
 // Middleware - CORS configuration
-app.use(
-  cors({
-    origin: [
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:5173",
       "http://localhost:8080",
       "https://shop-go-main-1.vercel.app",
-      /\.vercel\.app$/,
-      /\.netlify\.app$/,
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  }),
-);
+    ];
+
+    // Check if origin matches allowed patterns
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      origin.includes(".vercel.app") ||
+      origin.includes(".netlify.app");
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn("CORS blocked origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // Yoco Configuration
